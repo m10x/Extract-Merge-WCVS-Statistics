@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -93,8 +94,7 @@ func main() {
 
 			for i, x := range content {
 				if i == 0 {
-					compName = strings.Split(x, "D:\\aWCVS\\tests\\")[1]
-					compName = strings.Split(compName, "\\")[0]
+					compName = strings.Split(info.Name(), "_")[0]
 				}
 				if strings.HasPrefix(x, "General: ") {
 					//initialize/reset structs
@@ -155,16 +155,27 @@ func main() {
 			timeFalsePos.count += temp_timeFalsePos.count
 			timeFalsePos.once_count += temp_timeFalsePos.once_count
 			timeFalsePos.values = append(timeFalsePos.values, temp_timeFalsePos.values...)
+
+			writeStructsToFile(pathList, compName)
 		}
 		return nil
 	})
 
-	writeStructsToFile(pathList)
 }
 
-func createFile(pathList string, name string) *os.File {
-	fileName := pathList + name + ".csv"
-	_, err := os.Stat(fileName)
+func createFile(pathList string, folder string, name string) *os.File {
+	_, err := os.Stat(pathList + folder)
+
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(pathList+folder, 0755)
+		if errDir != nil {
+			log.Fatal(err)
+		}
+
+	}
+
+	fileName := pathList + folder + "\\" + name + ".csv"
+	_, err = os.Stat(fileName)
 
 	var file *os.File
 	defer file.Close()
@@ -189,8 +200,8 @@ func checkFix(key string) string {
 	return fix
 }
 
-func writeStructsToFile(pathList string) {
-	file := createFile(pathList, "general")
+func writeStructsToFile(pathList string, compName string) {
+	file := createFile(pathList, "general", compName)
 	first := true
 	for key := range general.stats {
 		if first {
@@ -266,7 +277,7 @@ func writeStructsToFile(pathList string) {
 	file.Close()
 	*/
 
-	file = createFile(pathList, "once_indicator")
+	file = createFile(pathList, "once_indicator", compName)
 	first = true
 	for key := range once_indicator.stats {
 		if first {
@@ -290,7 +301,7 @@ func writeStructsToFile(pathList string) {
 	}
 	file.Close()
 
-	file = createFile(pathList, "once_cachebuster")
+	file = createFile(pathList, "once_cachebuster", compName)
 	first = true
 	for key := range once_cachebuster.stats {
 		if first {
@@ -314,7 +325,7 @@ func writeStructsToFile(pathList string) {
 	}
 	file.Close()
 
-	file = createFile(pathList, "total_indicator")
+	file = createFile(pathList, "total_indicator", compName)
 	first = true
 	for key := range total_indicator.stats {
 		if first {
@@ -338,7 +349,7 @@ func writeStructsToFile(pathList string) {
 	}
 	file.Close()
 
-	file = createFile(pathList, "total_cachebuster")
+	file = createFile(pathList, "total_cachebuster", compName)
 	first = true
 	for key := range total_cachebuster.stats {
 		if first {
@@ -362,13 +373,13 @@ func writeStructsToFile(pathList string) {
 	}
 	file.Close()
 
-	file = createFile(pathList, "timeFalseNeg")
+	file = createFile(pathList, "timeFalseNeg", compName)
 	file.WriteString("once_count,count,values\n")
 	sort.Ints(timeFalseNeg.values)
 	file.WriteString(fmt.Sprintf("%d,%d,%v", timeFalseNeg.once_count, timeFalseNeg.count, timeFalseNeg.values))
 	file.Close()
 
-	file = createFile(pathList, "timeFalsePos")
+	file = createFile(pathList, "timeFalsePos", compName)
 	file.WriteString("once_count,count,values\n")
 	sort.Ints(timeFalsePos.values)
 	file.WriteString(fmt.Sprintf("%d,%d,%v", timeFalsePos.once_count, timeFalsePos.count, timeFalsePos.values))
