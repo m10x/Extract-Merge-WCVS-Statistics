@@ -65,18 +65,18 @@ func main() {
 	pathList := parseFlags()
 
 	if pathList == "" {
-		fmt.Printf("%sError: -list wasn't specified%s\n", red, reset)
+		fmt.Printf("%sError: -path wasn't specified%s\n", red, reset)
 		os.Exit(1)
 	}
 
 	//initialize structs
-	general = General{}
-	indicator = General{}
-	cachebuster = General{}
-	once_indicator = General{}
-	once_cachebuster = General{}
-	total_indicator = General{}
-	total_cachebuster = General{}
+	general = General{stats: make(map[string]int)}
+	indicator = General{stats: make(map[string]int)}
+	cachebuster = General{stats: make(map[string]int)}
+	once_indicator = General{stats: make(map[string]int)}
+	once_cachebuster = General{stats: make(map[string]int)}
+	total_indicator = General{stats: make(map[string]int)}
+	total_cachebuster = General{stats: make(map[string]int)}
 	timeFalseNeg = Time{}
 	timeFalsePos = Time{}
 
@@ -86,7 +86,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("error walk: " + err.Error())
 		}
-		if !info.IsDir() {
+		if !info.IsDir() && !strings.HasSuffix(path, ".csv") {
 			var compName string
 
 			content := readLocalFile(path)
@@ -96,33 +96,33 @@ func main() {
 					compName = strings.Split(x, "D:\\aWCVS\\tests\\")[1]
 					compName = strings.Split(compName, "\\")[0]
 				}
-				if strings.HasPrefix("General: ", x) {
+				if strings.HasPrefix(x, "General: ") {
 					//initialize/reset structs
-					temp_general = General{}
-					temp_indicator = General{}
-					temp_cachebuster = General{}
-					temp_once_indicator = General{}
-					temp_once_cachebuster = General{}
-					temp_total_indicator = General{}
-					temp_total_cachebuster = General{}
+					temp_general = General{stats: make(map[string]int)}
+					temp_indicator = General{stats: make(map[string]int)}
+					temp_cachebuster = General{stats: make(map[string]int)}
+					temp_once_indicator = General{stats: make(map[string]int)}
+					temp_once_cachebuster = General{stats: make(map[string]int)}
+					temp_total_indicator = General{stats: make(map[string]int)}
+					temp_total_cachebuster = General{stats: make(map[string]int)}
 					temp_timeFalseNeg = Time{}
 					temp_timeFalsePos = Time{}
 					extractStats(x, "General")
-				} else if strings.HasPrefix("Indicator: ", x) {
+				} else if strings.HasPrefix(x, "Indicator: ") {
 					extractStats(x, "Indicator")
-				} else if strings.HasPrefix("Cachebuster: ", x) {
+				} else if strings.HasPrefix(x, "Cachebuster: ") {
 					extractStats(x, "Cachebuster")
-				} else if strings.HasPrefix("Once_Indicator: ", x) {
+				} else if strings.HasPrefix(x, "Once_Indicator: ") {
 					extractStats(x, "Once_Indicator")
-				} else if strings.HasPrefix("Once_Cachebuster: ", x) {
+				} else if strings.HasPrefix(x, "Once_Cachebuster: ") {
 					extractStats(x, "Once_Cachebuster")
-				} else if strings.HasPrefix("Total_Indicator: ", x) {
+				} else if strings.HasPrefix(x, "Total_Indicator: ") {
 					extractStats(x, "Total_Indicator")
-				} else if strings.HasPrefix("Total_Cachebuster: ", x) {
+				} else if strings.HasPrefix(x, "Total_Cachebuster: ") {
 					extractStats(x, "Total_Cachebuster")
-				} else if strings.HasPrefix("TimeFalseNeg: ", x) {
+				} else if strings.HasPrefix(x, "TimeFalseNeg: ") {
 					extractStats(x, "TimeFalseNeg")
-				} else if strings.HasPrefix("TimeFalsePos: ", x) {
+				} else if strings.HasPrefix(x, "TimeFalsePos: ") {
 					extractStats(x, "TimeFalsePos")
 				}
 			}
@@ -181,6 +181,14 @@ func createFile(pathList string, name string) *os.File {
 	return file
 }
 
+func checkFix(key string) string {
+	fix := ""
+	for strings.Contains(key, fix) {
+		fix += "\""
+	}
+	return fix
+}
+
 func writeStructsToFile(pathList string) {
 	file := createFile(pathList, "general")
 	first := true
@@ -188,9 +196,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -198,21 +207,24 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
 
+	/* Not needed
 	file = createFile(pathList, "indicator")
 	first = true
 	for key := range indicator.stats {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -220,21 +232,25 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
+	*/
 
+	/* Not needed
 	file = createFile(pathList, "cachebuster")
 	first = true
 	for key := range cachebuster.stats {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -242,11 +258,13 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
+	*/
 
 	file = createFile(pathList, "once_indicator")
 	first = true
@@ -254,9 +272,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -264,9 +283,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
 
@@ -276,9 +296,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -286,9 +307,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
 
@@ -298,9 +320,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -308,9 +331,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
 
@@ -320,9 +344,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(key)
+		fixes := checkFix(key)
+		file.WriteString(fixes + key + fixes)
 	}
 	file.WriteString("\n")
 	first = true
@@ -330,9 +355,10 @@ func writeStructsToFile(pathList string) {
 		if first {
 			first = false
 		} else {
-			file.WriteString(",")
+			file.WriteString(";")
 		}
-		file.WriteString(fmt.Sprint(val))
+		fixes := checkFix(fmt.Sprint(val))
+		file.WriteString(fixes + fmt.Sprint(val) + fixes)
 	}
 	file.Close()
 
@@ -350,7 +376,7 @@ func writeStructsToFile(pathList string) {
 }
 
 func extractStats(content string, prefix string) {
-	if !strings.HasPrefix("Time", content) {
+	if !strings.HasPrefix(content, "Time") {
 		content = strings.Split(content, "[")[1]
 		content = strings.TrimSuffix(content, "]")
 
@@ -392,25 +418,25 @@ func extractStats(content string, prefix string) {
 func writeToStruct(name string, value string, prefix string) {
 	if prefix == "General" {
 		valueint, _ := strconv.Atoi(value)
-		temp_general.stats[name] += valueint
+		temp_general.stats[name] = valueint
 	} else if prefix == "Indicator" {
 		valueint, _ := strconv.Atoi(value)
-		temp_indicator.stats[name] += valueint
+		temp_indicator.stats[name] = valueint
 	} else if prefix == "Cachebuster" {
 		valueint, _ := strconv.Atoi(value)
-		temp_cachebuster.stats[name] += valueint
+		temp_cachebuster.stats[name] = valueint
 	} else if prefix == "Once_Indicator" {
 		valueint, _ := strconv.Atoi(value)
-		temp_once_indicator.stats[name] += valueint
+		temp_once_indicator.stats[name] = valueint
 	} else if prefix == "Once_Cachebuster" {
 		valueint, _ := strconv.Atoi(value)
-		temp_once_cachebuster.stats[name] += valueint
+		temp_once_cachebuster.stats[name] = valueint
 	} else if prefix == "Total_Indicator" {
 		valueint, _ := strconv.Atoi(value)
-		temp_total_indicator.stats[name] += valueint
+		temp_total_indicator.stats[name] = valueint
 	} else if prefix == "Total_Cachebuster" {
 		valueint, _ := strconv.Atoi(value)
-		temp_total_cachebuster.stats[name] += valueint
+		temp_total_cachebuster.stats[name] = valueint
 	} else {
 		fmt.Println("This shouldnt happen... " + name + ":" + value)
 		os.Exit(2)
