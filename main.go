@@ -87,7 +87,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("error walk: " + err.Error())
 		}
-		if !info.IsDir() && !strings.HasSuffix(path, ".csv") {
+		if !info.IsDir() && strings.HasSuffix(path, "WCVS_Log") {
 			var compName string
 
 			content := readLocalFile(path)
